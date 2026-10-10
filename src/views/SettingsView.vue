@@ -70,7 +70,7 @@ function wipe() {
         <label class="field">Incremento tren inferior<input type="number" inputmode="decimal" step="0.5" min="0" v-model.number="prefs.settings.incLower" /></label>
       </div>
       <label class="field">Descanso por defecto (s)<input type="number" inputmode="numeric" step="15" min="0" v-model.number="prefs.settings.defaultRest" /></label>
-      <label class="row"><input type="checkbox" v-model="prefs.settings.sound" style="width: auto; min-height: 0" /> Sonido al terminar el descanso</label>
+      <label class="row"><input type="checkbox" class="switch" v-model="prefs.settings.sound" /> Sonido al terminar el descanso</label>
       <p class="small muted">Progresión doble: cuando completas todas las series en el tope del rango de reps, la app te sugiere subir el peso con estos incrementos.</p>
     </section>
 

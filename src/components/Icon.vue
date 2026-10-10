@@ -20,6 +20,12 @@ const PATHS = {
   dumbbell: 'M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11',
   copy: 'M8 8h12v12H8zM4 16V4h12',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
+  list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
+  flame: 'M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-3.5 2-5 1 1.5 1.5 2.5 3 3 0-3-1-5 0-8z',
+  scale: 'M4 7h16l-2 13H6zM9 7a3 3 0 0 1 6 0M12 11v3',
+  sparkle: 'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
+  history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
+  minus: 'M5 12h14',
   trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6',
 } as const
 export type IconName = keyof typeof PATHS
@@ -27,7 +33,7 @@ defineProps<{ name: IconName; size?: number }>()
 </script>
 
 <template>
-  <svg :width="size ?? 22" :height="size ?? 22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <svg :width="size ?? 22" :height="size ?? 22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path :d="PATHS[name]" />
   </svg>
 </template>

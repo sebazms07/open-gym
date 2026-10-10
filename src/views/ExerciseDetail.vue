@@ -9,12 +9,20 @@ import { bestSet, volume } from '../lib/progression'
 import { formatDate, formatNumber } from '../lib/util'
 import Icon from '../components/Icon.vue'
 import ProgressChart from '../components/ProgressChart.vue'
+import MuscleFigure from '../components/MuscleFigure.vue'
+import { muscleWeights, MUSCLE_NAME_ES, type Muscle } from '../lib/muscles'
+import { useProgram } from '../stores/program'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
 const catalogue = useCatalogue()
 const workouts = useWorkouts()
 const prefs = useSettings()
+const prog = useProgram()
+const weights = computed(() => (ex.value ? (muscleWeights(ex.value) as Record<string, number>) : {}))
+const worked = computed(() =>
+  (Object.entries(weights.value) as [Muscle, number][]).sort((a, b) => b[1] - a[1]).map(([m, w]) => ({ name: MUSCLE_NAME_ES[m], main: w >= 0.75 })),
+)
 
 const ex = computed(() => catalogue.get(props.id))
 const logs = computed(() => workouts.logsFor(props.id).filter((x) => x.log.sets.length))
@@ -29,9 +37,12 @@ const videos = computed(() => `https://www.youtube.com/results?search_query=${en
 <template>
   <main class="page" v-if="ex">
     <header class="page-header">
-      <button class="btn icon ghost" aria-label="Volver" @click="router.back()"><Icon name="back" /></button>
-      <h1 class="cap">{{ ex.n }}</h1>
+      <button class="btn icon" aria-label="Volver" @click="router.back()"><Icon name="back" /></button>
     </header>
+    <div class="card" style="padding: 18px 0">
+      <MuscleFigure :weights="weights" :sex="prog.figureSex" :height="280" />
+    </div>
+    <h1 class="cap" style="font-size: 1.6rem">{{ ex.n }}</h1>
     <div class="chips">
       <span class="chip accent">{{ muscleLabel(ex.t) }}</span>
       <span class="chip">{{ bodyPartLabel(ex.b) }}</span>
@@ -46,9 +57,9 @@ const videos = computed(() => `https://www.youtube.com/results?search_query=${en
       <ol class="steps">
         <li v-for="(s, i) in ex.i" :key="i">{{ s }}</li>
       </ol>
-      <div v-if="ex.s.length" class="stack" style="gap: 6px">
-        <span class="small muted">Músculos secundarios</span>
-        <div class="chips"><span v-for="m in ex.s" :key="m" class="chip">{{ muscleLabel(m) }}</span></div>
+      <div v-if="worked.length" class="stack" style="gap: 6px">
+        <span class="small muted">Músculos trabajados</span>
+        <div class="chips"><span v-for="m in worked" :key="m.name" class="chip" :class="{ accent: m.main }">{{ m.name }}</span></div>
       </div>
       <a :href="videos" target="_blank" rel="noopener" class="btn sm" style="align-self: flex-start">Ver vídeos de técnica ↗</a>
       <p class="small muted">Nombre original: {{ ex.en }}</p>

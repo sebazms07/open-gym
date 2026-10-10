@@ -3,11 +3,14 @@
 Web app móvil (PWA) para llevar el registro de tus entrenamientos en el gimnasio, consultar una guía
 de más de 5.600 ejercicios en español y seguir un plan semanal personalizable con progresión automática.
 
-- **Hoy**: la rutina del día, el resumen de la semana y el botón para empezar.
+- **Inicio**: calendario de la semana, la sesión de hoy (o la que se movió), fase del programa, peso corporal con meta y racha semanal.
+- **Mi objetivo**: perfil, meta (bajar grasa, músculo, fuerza o salud), días disponibles y duración → genera el plan, con fases de 4 semanas (carga, sobrecarga y descarga), calorías y proteína orientativas.
+- **Sesiones movidas**: si faltas a un día de entreno, la sesión pasa al siguiente día disponible.
+- **Mapa muscular**: cada ejercicio muestra los músculos que trabaja; en Estadísticas, el balance muscular por series.
 - **Entreno**: series de peso × reps, el peso sugerido de la sesión anterior, temporizador de descanso con vibración y notas.
 - **Plan**: rutinas personalizables (ejercicios, series, rango de reps, descanso), asignadas a cada día, con plantillas iniciales (Full body 3 días, Torso/Pierna 4 días, PPL 6 días).
 - **Guía**: búsqueda y filtros por zona, equipo y tipo; instrucciones paso a paso y tu historial en cada ejercicio.
-- **Progreso**: historial, volumen semanal y curva de 1RM estimado por ejercicio.
+- **Estadísticas**: entrenos, racha, mapa de actividad, balance muscular, historial, gráficos y peso.
 - **Progresión doble**: cuando completas todas las series en el tope del rango, te sugiere subir el peso.
 
 Los datos se guardan **solo en tu teléfono** (IndexedDB). Exporta un respaldo JSON desde *Ajustes*.

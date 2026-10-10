@@ -27,6 +27,8 @@ export const useProgram = defineStore('program', () => {
 
   const workouts = useWorkouts()
 
+  /** Silueta del mapa muscular según el perfil. */
+  const figureSex = computed(() => (profile.value.sex === 'female' ? 'female' : 'male'))
   const goal = computed(() => (program.value ? GOALS[program.value.goal] : null))
   const phase = computed(() => (program.value ? phaseOf(program.value.goal, program.value.phase) : null))
   const week = computed(() => (program.value ? weekInfo(program.value, workouts.workouts) : null))
@@ -59,5 +61,5 @@ export const useProgram = defineStore('program', () => {
   /** Cambia solo el objetivo manteniendo los días. */
   const setGoal = (g: Goal) => program.value && apply({ ...program.value, goal: g, phase: 1, startDate: toISODate(startOfWeek()) })
 
-  return { profile, program, weighIns, ready, goal, phase, week, sortedWeighIns, currentWeight, trend, advice, targets, logWeight, removeWeight, apply, advancePhase, setGoal }
+  return { profile, figureSex, program, weighIns, ready, goal, phase, week, sortedWeighIns, currentWeight, trend, advice, targets, logWeight, removeWeight, apply, advancePhase, setGoal }
 })

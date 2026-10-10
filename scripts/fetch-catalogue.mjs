@@ -26,6 +26,13 @@ const exDir = join(repoDir, 'catalogue', 'exercises')
 const es = JSON.parse(readFileSync(join(repoDir, 'catalogue', 'i18n', 'es.json'), 'utf8'))
 const commit = execFileSync('git', ['-C', repoDir, 'rev-parse', '--short', 'HEAD']).toString().trim()
 
+/** Mapa muscular corregido por openGym → { músculo: peso 0–1 } */
+function muscleWeights(mm) {
+  if (!mm?.primaries?.length) return null
+  if (mm.weights) return Object.fromEntries(Object.entries(mm.weights).filter(([, w]) => w > 0))
+  return Object.fromEntries([...mm.primaries.map((m) => [m, 1]), ...(mm.secondaries ?? []).map((m) => [m, 0.5])])
+}
+
 const exercises = []
 for (const file of readdirSync(exDir).filter((f) => f.endsWith('.json')).sort()) {
   const d = JSON.parse(readFileSync(join(exDir, file), 'utf8'))
@@ -43,6 +50,7 @@ for (const file of readdirSync(exDir).filter((f) => f.endsWith('.json')).sort())
     d: t.description ?? d.description ?? '',
     i: t.instructions ?? d.instructions ?? [],
     l: t.instructions ? 'es' : 'en', // idioma de las instrucciones
+    ...(muscleWeights(d.muscleMap) ? { m: muscleWeights(d.muscleMap) } : {}),
   })
 }
 

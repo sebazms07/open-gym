@@ -7,12 +7,17 @@ import { useWorkouts } from '../stores/workouts'
 import { useCatalogue } from '../stores/catalogue'
 import { useSettings } from '../stores/settings'
 import { bestSet, volume } from '../lib/progression'
-import { formatDate, formatDuration, formatNumber, startOfWeek } from '../lib/util'
+import { formatDate, formatNumber, startOfWeek } from '../lib/util'
 import type { Workout } from '../types'
 import { useProgram } from '../stores/program'
 import { toISODate } from '../lib/program'
 import Icon from '../components/Icon.vue'
 import ProgressChart from '../components/ProgressChart.vue'
+import MuscleFigure from '../components/MuscleFigure.vue'
+import { minSessionsFor } from '../lib/program'
+import { activityGrid, weekStreak } from '../lib/stats'
+import { MUSCLES, MUSCLE_NAME_ES, muscleSets } from '../lib/muscles'
+import { usePlan } from '../stores/plan'
 
 Chart.register(BarElement, LineElement, PointElement, LinearScale, CategoryScale, Tooltip)
 
@@ -21,6 +26,42 @@ const css = (v: string) => getComputedStyle(document.documentElement).getPropert
 const workouts = useWorkouts()
 const catalogue = useCatalogue()
 const prefs = useSettings()
+
+// --- Resumen
+const planStore = usePlan()
+const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+const thisMonth = computed(() => workouts.workouts.filter((w) => new Date(w.date) >= monthStart).length)
+const streak = computed(() =>
+  weekStreak(workouts.workouts, minSessionsFor(prog.program?.sessions ?? (planStore.plan.schedule.filter(Boolean).length || 1))),
+)
+const weight30 = computed(() => {
+  const list = prog.sortedWeighIns
+  if (list.length < 2) return null
+  const cutoff = toISODate(new Date(Date.now() - 30 * 864e5))
+  const base = list.find((e) => e.date >= cutoff) ?? list[0]
+  return list[list.length - 1].weight - base.weight
+})
+const grid = computed(() => activityGrid(workouts.workouts, 17))
+const heat = (min: number) => (min <= 0 ? 0 : min < 30 ? 1 : min < 50 ? 2 : min < 70 ? 3 : 4)
+const monthLabels = computed(() =>
+  grid.value.map((col, i) => {
+    const d = col[0].date
+    const prev = i ? grid.value[i - 1][0].date : null
+    return !prev || prev.getMonth() !== d.getMonth() ? d.toLocaleDateString('es', { month: 'short' }) : ''
+  }),
+)
+
+const period = ref<7 | 30 | 90 | 0>(7)
+const balance = computed(() => {
+  const from = period.value ? Date.now() - period.value * 864e5 : 0
+  const sets = muscleSets(workouts.workouts.filter((w) => new Date(w.date).getTime() >= from), catalogue.get)
+  const max = Math.max(1, ...Object.values(sets).map((v) => v ?? 0))
+  return {
+    weights: Object.fromEntries(Object.entries(sets).map(([m, v]) => [m, (v ?? 0) / max])) as Record<string, number>,
+    rows: MUSCLES.map((m) => ({ m, name: MUSCLE_NAME_ES[m], sets: Math.round((sets[m] ?? 0) * 10) / 10 })).filter((r) => r.sets > 0).sort((a, b) => b.sets - a.sets),
+    neglected: MUSCLES.filter((m) => !sets[m] && !['serratus', 'hip-flexors', 'tibialis', 'forearm'].includes(m)).map((m) => MUSCLE_NAME_ES[m]),
+  }
+})
 
 const tab = ref<'history' | 'charts' | 'weight'>(route.query.tab === 'peso' ? 'weight' : 'history')
 const prog = useProgram()
@@ -62,7 +103,7 @@ const open = ref<string | null>(typeof route.query.w === 'string' ? route.query.
 
 const wVolume = (w: Workout) => w.exercises.reduce((a, e) => a + volume(e), 0)
 const wSets = (w: Workout) => w.exercises.reduce((a, e) => a + e.sets.length, 0)
-const wDuration = (w: Workout) => (w.finishedAt ? formatDuration(new Date(w.finishedAt).getTime() - new Date(w.date).getTime()) : '')
+const wDuration = (w: Workout) => (w.finishedAt ? `${Math.max(1, Math.round((new Date(w.finishedAt).getTime() - new Date(w.date).getTime()) / 6e4))} min` : '')
 
 function remove(w: Workout) {
   if (confirm(`¿Eliminar el entreno del ${formatDate(w.date)}?`)) workouts.remove(w.id)
@@ -111,7 +152,45 @@ const barOptions = {
 
 <template>
   <main class="page">
-    <h1>Progreso</h1>
+    <header><h1>Estadísticas</h1><p class="subtitle">Progreso e historial</p></header>
+
+    <div class="tiles">
+      <div class="tile"><span class="label"><Icon name="dumbbell" :size="14" />Entrenos</span><b>{{ workouts.workouts.length }}</b></div>
+      <div class="tile"><span class="label"><Icon name="calendar" :size="14" />Este mes</span><b>{{ thisMonth }}</b></div>
+      <div class="tile"><span class="label"><Icon name="flame" :size="14" />Racha semanal</span><b>{{ streak }}</b></div>
+      <div class="tile"><span class="label"><Icon name="scale" :size="14" />Peso 30 días</span>
+        <b :style="{ color: weight30 == null ? '' : weight30 <= 0 ? 'var(--accent)' : 'var(--warn)' }">{{ weight30 == null ? '—' : `${weight30 > 0 ? '+' : ''}${formatNumber(weight30)} kg` }}</b>
+      </div>
+    </div>
+
+    <section class="card stack">
+      <span class="small muted">Actividad · últimas 17 semanas</span>
+      <div class="heat-months xs faint"><span v-for="(m, i) in monthLabels" :key="i">{{ m }}</span></div>
+      <div class="heat">
+        <div v-for="(col, c) in grid" :key="c" class="heat-col">
+          <i v-for="cell in col" :key="cell.date.toDateString()" :class="[`h${heat(cell.minutes)}`, { future: cell.future }]" :title="`${cell.date.toLocaleDateString('es')}: ${Math.round(cell.minutes)} min`" />
+        </div>
+      </div>
+      <div class="row xs faint" style="justify-content: flex-end; gap: 4px">Menos <i class="h1 sq" /><i class="h2 sq" /><i class="h3 sq" /><i class="h4 sq" /> Más</div>
+    </section>
+
+    <section class="card stack">
+      <div class="row between"><h2>Balance muscular</h2><span class="small muted">por series</span></div>
+      <div class="segmented">
+        <button v-for="[p, l] in ([[7, 'Semana'], [30, '30d'], [90, '90d'], [0, 'Todo']] as const)" :key="p" :class="{ on: period === p }" @click="period = p">{{ l }}</button>
+      </div>
+      <MuscleFigure :weights="balance.weights" :sex="prog.figureSex" :height="260" />
+      <div v-if="balance.rows.length" class="mrows">
+        <div v-for="r in balance.rows.slice(0, 8)" :key="r.m" class="mrow small">
+          <span class="grow">{{ r.name }}</span>
+          <span class="mbar"><i :style="{ width: (r.sets / balance.rows[0].sets) * 100 + '%' }" /></span>
+          <span class="num muted" style="width: 36px; text-align: right">{{ r.sets }}</span>
+        </div>
+      </div>
+      <p v-else class="small muted">Sin series en este periodo.</p>
+      <p v-if="balance.rows.length && balance.neglected.length" class="small" style="color: var(--warn)">Sin trabajar: {{ balance.neglected.join(', ') }}.</p>
+    </section>
+
     <div class="segmented">
       <button :class="{ on: tab === 'history' }" @click="tab = 'history'">Historial</button>
       <button :class="{ on: tab === 'charts' }" @click="tab = 'charts'">Gráficos</button>
@@ -190,6 +269,20 @@ const barOptions = {
 </template>
 
 <style scoped>
+.heat { display: grid; grid-template-columns: repeat(17, 1fr); gap: 3px; }
+.heat-months { display: grid; grid-template-columns: repeat(17, 1fr); gap: 3px; margin-bottom: -6px; white-space: nowrap; }
+.heat-col { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.heat i, .sq { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--surface-2); }
+.sq { width: 10px; }
+.h1 { background: color-mix(in srgb, var(--accent) 30%, var(--surface-2)) !important; }
+.h2 { background: color-mix(in srgb, var(--accent) 55%, var(--surface-2)) !important; }
+.h3 { background: color-mix(in srgb, var(--accent) 80%, var(--surface-2)) !important; }
+.h4 { background: var(--accent) !important; }
+.heat i.future { opacity: 0.3; }
+.mrows { display: flex; flex-direction: column; gap: 6px; }
+.mrow { display: flex; align-items: center; gap: 10px; }
+.mbar { flex: 1.3; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.mbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
 .wgrid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
 .wgrid input { padding: 8px 6px; }
 </style>

@@ -54,51 +54,50 @@ function choose(e: Exercise) {
 <template>
   <main class="page">
     <header class="page-header">
-      <button v-if="pick" class="btn icon ghost" aria-label="Volver" @click="router.back()"><Icon name="back" /></button>
-      <h1>{{ pick ? 'Añadir ejercicio' : 'Guía de ejercicios' }}</h1>
+      <button v-if="pick" class="btn icon" aria-label="Volver" @click="router.back()"><Icon name="back" /></button>
+      <div class="grow">
+        <h1>{{ pick ? 'Añadir ejercicio' : 'Ejercicios' }}</h1>
+        <p class="subtitle">{{ catalogue.list.length.toLocaleString('es') }} ejercicios con mapa muscular</p>
+      </div>
     </header>
     <p v-if="pickRoutine" class="muted small">Toca un ejercicio para añadirlo a <b>{{ pickRoutine.name }}</b>.</p>
 
     <div class="search">
       <Icon name="search" :size="18" />
-      <input v-model="q" type="search" placeholder="Buscar (ej. press banca, sentadilla…)" autocomplete="off" />
+      <input v-model="q" type="search" placeholder="Buscar…" autocomplete="off" />
     </div>
-    <div class="filters">
-      <select v-model="bodyPart" aria-label="Parte del cuerpo">
-        <option value="">Zona: todas</option>
-        <option v-for="[k, v] in sortByLabel(BODY_PARTS)" :key="k" :value="k">{{ v }}</option>
-      </select>
-      <select v-model="equipment" aria-label="Equipamiento">
-        <option value="">Equipo: todo</option>
-        <option v-for="[k, v] in sortByLabel(EQUIPMENT)" :key="k" :value="k">{{ v }}</option>
-      </select>
-      <select v-model="category" aria-label="Categoría">
-        <option value="">Tipo: todos</option>
-        <option v-for="[k, v] in sortByLabel(CATEGORIES)" :key="k" :value="k">{{ v }}</option>
-      </select>
+    <div class="pills">
+      <button class="pill-btn" :class="{ on: !bodyPart }" @click="bodyPart = ''">Todos</button>
+      <button v-for="[k, v] in sortByLabel(BODY_PARTS)" :key="k" class="pill-btn" :class="{ on: bodyPart === k }" @click="bodyPart = bodyPart === k ? '' : k">{{ v }}</button>
+    </div>
+    <div class="pills">
+      <button class="pill-btn" :class="{ on: !equipment }" @click="equipment = ''">Cualquier equipo</button>
+      <button v-for="[k, v] in sortByLabel(EQUIPMENT)" :key="k" class="pill-btn" :class="{ on: equipment === k }" @click="equipment = equipment === k ? '' : k">{{ v }}</button>
+    </div>
+    <div class="pills">
+      <button class="pill-btn" :class="{ on: !category }" @click="category = ''">Cualquier tipo</button>
+      <button v-for="[k, v] in sortByLabel(CATEGORIES)" :key="k" class="pill-btn" :class="{ on: category === k }" @click="category = category === k ? '' : k">{{ v }}</button>
     </div>
     <div class="row between small muted">
-      <span>{{ results.length.toLocaleString('es') }} ejercicios</span>
-      <button v-if="hasFilters" class="btn sm ghost" @click="clear">Limpiar filtros</button>
+      <span>{{ results.length.toLocaleString('es') }} resultados</span>
+      <button v-if="hasFilters" class="btn sm ghost accent-text" @click="clear">Limpiar</button>
     </div>
 
-    <div class="card list" v-if="shown.length">
+    <div v-if="shown.length" class="card list" style="padding: 2px 12px">
       <button v-for="e in shown" :key="e.id" class="plain" @click="choose(e)">
         <ExerciseItem :exercise="e">
-          <Icon v-if="pick" name="plus" :size="20" style="color: var(--accent)" />
+          <Icon v-if="pick" name="plus" :size="20" class="accent-text" />
         </ExerciseItem>
       </button>
     </div>
     <p v-else class="empty">No hay ejercicios con esos filtros.</p>
     <button v-if="results.length > limit" class="btn block" @click="limit += PAGE">Ver más</button>
-    <p class="muted small" style="text-align: center">Catálogo: <a href="https://github.com/DuarteSantos8/openGym" target="_blank" rel="noopener">openGym</a> ({{ catalogue.source }})</p>
+    <p class="xs faint" style="text-align: center">Catálogo de <a href="https://github.com/DuarteSantos8/openGym" target="_blank" rel="noopener">openGym</a> ({{ catalogue.source }}) · siluetas de MuscleMap</p>
   </main>
 </template>
 
 <style scoped>
 .search { position: relative; display: flex; align-items: center; }
-.search svg { position: absolute; left: 12px; color: var(--muted); pointer-events: none; }
-.search input { padding-left: 38px; }
-.filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.filters select { font-size: 0.85rem; padding: 8px; }
+.search svg { position: absolute; left: 12px; color: var(--faint); pointer-events: none; }
+.search input { padding-left: 38px; background: var(--surface); }
 </style>

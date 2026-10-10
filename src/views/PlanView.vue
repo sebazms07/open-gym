@@ -2,12 +2,15 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlan } from '../stores/plan'
+import { useProgram } from '../stores/program'
 import { DAYS, todayIndex } from '../lib/labels'
 import { TEMPLATES } from '../data/templates'
+import { BLOCK_WEEKS, GOALS, estimateMinutes } from '../lib/program'
 import Icon from '../components/Icon.vue'
 
 const router = useRouter()
 const planStore = usePlan()
+const prog = useProgram()
 const showTemplates = ref(false)
 const today = todayIndex()
 
@@ -15,83 +18,105 @@ function newRoutine() {
   const r = planStore.addRoutine()
   router.push(`/plan/rutina/${r.id}`)
 }
-
 function applyTemplate(id: string, name: string) {
   if (!confirm(`¿Reemplazar tu plan actual por «${name}»? Tu historial de entrenos se conserva.`)) return
   planStore.loadTemplate(id)
   showTemplates.value = false
 }
-
 function remove(id: string, name: string) {
   if (confirm(`¿Eliminar la rutina «${name}»?`)) planStore.removeRoutine(id)
+}
+function assign(day: number, ev: Event) {
+  const v = (ev.target as HTMLSelectElement).value
+  if (v === '__new') {
+    const r = planStore.addRoutine()
+    planStore.plan.schedule[day] = r.id
+    router.push(`/plan/rutina/${r.id}`)
+  } else planStore.plan.schedule[day] = v || null
+  ;(ev.target as HTMLSelectElement).value = ''
 }
 </script>
 
 <template>
   <main class="page">
     <header class="page-header">
-      <h1>Plan semanal</h1>
-      <button class="btn sm" @click="showTemplates = !showTemplates">Plantillas</button>
+      <div class="grow"><h1>Plan</h1><p class="subtitle">Tu rutina semanal</p></div>
+      <button class="btn icon" aria-label="Plantillas" @click="showTemplates = !showTemplates"><Icon name="copy" :size="18" /></button>
     </header>
 
-    <section v-if="showTemplates" class="stack">
-      <p class="muted small">Carga una plantilla y luego ajústala a tu gusto: cambia ejercicios, series, reps y días.</p>
-      <div v-for="t in TEMPLATES" :key="t.id" class="card stack">
-        <div>
-          <h3>{{ t.name }}</h3>
-          <p class="small muted">{{ t.description }}</p>
+    <RouterLink to="/objetivo" class="card accent row">
+      <span class="app-icon"><Icon name="sparkle" :size="18" /></span>
+      <div class="grow">
+        <b>Mi objetivo</b>
+        <div class="small muted">
+          <template v-if="prog.program && prog.phase && prog.week">{{ GOALS[prog.program.goal].name }} · Fase {{ prog.program.phase }} {{ prog.phase.name }} · Sem. {{ prog.week.week }}/{{ BLOCK_WEEKS }}</template>
+          <template v-else>Diseña tu plan según tu meta, días y tiempo</template>
         </div>
-        <p class="small muted">{{ t.routines.map((r) => r.name).join(' · ') }}</p>
+      </div>
+      <Icon name="next" :size="18" class="muted" />
+    </RouterLink>
+
+    <section v-if="showTemplates" class="stack">
+      <p class="section-label">Plantillas</p>
+      <div v-for="t in TEMPLATES" :key="t.id" class="card stack">
+        <div><h3>{{ t.name }}</h3><p class="small muted">{{ t.description }}</p></div>
         <button class="btn sm primary" style="align-self: flex-start" @click="applyTemplate(t.id, t.name)">Usar esta plantilla</button>
       </div>
     </section>
 
-    <RouterLink to="/objetivo" class="card accent row">
-      <Icon name="trophy" />
-      <div class="grow"><b>Mi objetivo</b><div class="small muted">Genera un plan según tu meta, días y tiempo disponibles.</div></div>
-      <Icon name="next" />
-    </RouterLink>
-
-    <section class="card stack">
-      <h2>Semana</h2>
-      <label class="row small"><input type="checkbox" :checked="planStore.rollover" style="width: auto; min-height: 0" @change="planStore.plan.rollover = ($event.target as HTMLInputElement).checked" /> Si falto a una sesión, moverla al siguiente día disponible</label>
-      <div class="list">
-        <label v-for="(d, i) in DAYS" :key="d" class="list-item day">
-          <span class="dayname" :class="{ today: i === today }">{{ d }}</span>
-          <select v-model="planStore.plan.schedule[i]">
-            <option :value="null">Descanso</option>
-            <option v-for="r in planStore.plan.routines" :key="r.id" :value="r.id">{{ r.name }}</option>
-          </select>
-        </label>
+    <p class="section-label">Horario semanal</p>
+    <section v-for="(d, i) in DAYS" :key="d" class="card day">
+      <div class="row between">
+        <b :class="{ 'accent-text': i === today }">{{ d }}</b>
+        <span v-if="planStore.plan.schedule[i]" class="xs faint">1 rutina</span>
+        <span v-else class="chip">{{ planStore.available[i] ? 'Descanso' : 'Libre' }}</span>
       </div>
+      <div v-if="planStore.routine(planStore.plan.schedule[i])" class="row routine">
+        <RouterLink :to="`/plan/rutina/${planStore.plan.schedule[i]}`" class="row grow">
+          <span class="app-icon"><Icon name="dumbbell" :size="18" /></span>
+          <div class="grow">
+            <div style="font-weight: 500">{{ planStore.routine(planStore.plan.schedule[i])!.name }}</div>
+            <div class="small muted">{{ planStore.routine(planStore.plan.schedule[i])!.exercises.length }} ejercicios · ~{{ estimateMinutes(planStore.routine(planStore.plan.schedule[i])!.exercises) }} min</div>
+          </div>
+        </RouterLink>
+        <button class="btn icon ghost" aria-label="Quitar del día" @click="planStore.plan.schedule[i] = null"><Icon name="x" :size="16" /></button>
+      </div>
+      <label v-else class="add accent-text small">
+        <Icon name="plus" :size="14" /> Añadir rutina
+        <select aria-label="Añadir rutina" @change="assign(i, $event)">
+          <option value="" />
+          <option v-for="r in planStore.plan.routines" :key="r.id" :value="r.id">{{ r.name }}</option>
+          <option value="__new">+ Nueva rutina…</option>
+        </select>
+      </label>
     </section>
 
-    <section class="stack">
-      <div class="row between">
-        <h2>Rutinas</h2>
-        <button class="btn sm primary" @click="newRoutine"><Icon name="plus" :size="18" />Nueva</button>
-      </div>
-      <p v-if="!planStore.plan.routines.length" class="empty card">No tienes rutinas. Crea una o carga una plantilla.</p>
-      <div v-for="r in planStore.plan.routines" :key="r.id" class="card row">
+    <label class="card row small" style="cursor: pointer">
+      <span class="grow">Si falto a una sesión, moverla al siguiente día disponible</span>
+      <input type="checkbox" class="switch" :checked="planStore.rollover" @change="planStore.plan.rollover = ($event.target as HTMLInputElement).checked" />
+    </label>
+
+    <div class="row between" style="margin-top: 6px">
+      <p class="section-label" style="margin: 0 4px">Rutinas</p>
+      <button class="btn sm pill" @click="newRoutine"><Icon name="plus" :size="14" />Nueva</button>
+    </div>
+    <section class="card list" style="padding: 4px 14px">
+      <div v-for="r in planStore.plan.routines" :key="r.id" class="list-item">
         <RouterLink :to="`/plan/rutina/${r.id}`" class="grow">
-          <h3>{{ r.name }}</h3>
-          <p class="small muted">
-            {{ r.exercises.length }} ejercicios · {{ r.exercises.reduce((a, e) => a + e.sets, 0) }} series
-            <template v-if="planStore.plan.schedule.some((d) => d === r.id)">
-              · {{ DAYS.filter((_, i) => planStore.plan.schedule[i] === r.id).join(', ') }}
-            </template>
-          </p>
+          <div style="font-weight: 500">{{ r.name }}</div>
+          <div class="small muted">{{ r.exercises.length }} ejercicios · {{ r.exercises.reduce((a, e) => a + e.sets, 0) }} series</div>
         </RouterLink>
-        <button class="btn icon ghost" aria-label="Duplicar" @click="planStore.duplicateRoutine(r.id)"><Icon name="copy" :size="18" /></button>
-        <button class="btn icon ghost danger" aria-label="Eliminar" @click="remove(r.id, r.name)"><Icon name="trash" :size="18" /></button>
+        <button class="btn icon ghost" aria-label="Duplicar" @click="planStore.duplicateRoutine(r.id)"><Icon name="copy" :size="16" /></button>
+        <button class="btn icon ghost danger" aria-label="Eliminar" @click="remove(r.id, r.name)"><Icon name="trash" :size="16" /></button>
       </div>
+      <p v-if="!planStore.plan.routines.length" class="empty">No tienes rutinas. Crea una o usa Mi objetivo.</p>
     </section>
   </main>
 </template>
 
 <style scoped>
-.day { gap: 12px; }
-.dayname { width: 92px; font-weight: 600; }
-.dayname.today { color: var(--accent); }
-.day select { flex: 1; }
+.day { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
+.routine { gap: 4px; }
+.add { position: relative; display: flex; align-items: center; gap: 6px; font-weight: 500; padding-left: 4px; }
+.add select { position: absolute; inset: 0; opacity: 0; min-height: 0; cursor: pointer; }
 </style>

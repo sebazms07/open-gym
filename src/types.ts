@@ -21,6 +21,8 @@ export interface Exercise {
   i: string[]
   /** idioma de las instrucciones */
   l: 'es' | 'en'
+  /** mapa muscular corregido por openGym: { músculo: peso 0–1 } */
+  m?: Record<string, number>
 }
 
 /** reps = repeticiones; s = segundos (planchas); min = minutos (cardio) */
@@ -99,6 +101,8 @@ export interface Profile {
   /** cm */
   height: number | null
   activity: Activity
+  /** peso meta en kg (opcional) */
+  goalWeight?: number | null
 }
 
 export interface WeighIn {

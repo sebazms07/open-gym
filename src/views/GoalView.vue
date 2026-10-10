@@ -85,6 +85,7 @@ const goals = Object.entries(GOALS) as [Goal, (typeof GOALS)[Goal]][]
         <label class="field">Altura (cm)<input type="number" inputmode="numeric" min="120" max="230" v-model.number="p.height" /></label>
         <label class="field">Peso (kg)<input type="number" inputmode="decimal" step="0.1" v-model.number="weightInput" @change="saveWeight" /></label>
       </div>
+      <label class="field">Peso meta (kg, opcional)<input type="number" inputmode="decimal" step="0.5" v-model.number="p.goalWeight" :placeholder="p.height ? `p. ej. ${Math.round(healthyMaxWeight(p.height) + 2)}` : ''" /></label>
       <label class="field">Actividad
         <select v-model="p.activity">
           <option v-for="(a, k) in ACTIVITY" :key="k" :value="k as Activity">{{ a.label }}</option>
@@ -99,7 +100,7 @@ const goals = Object.entries(GOALS) as [Goal, (typeof GOALS)[Goal]][]
     <!-- Objetivo -->
     <section class="stack">
       <h2>¿Qué quieres conseguir?</h2>
-      <button v-for="[k, g] in goals" :key="k" class="card goal plain" :class="{ on: draft.goal === k }" @click="draft.goal = k">
+      <button v-for="[k, g] in goals" :key="k" class="card goal" :class="{ on: draft.goal === k }" @click="draft.goal = k">
         <div class="row between"><b>{{ g.name }}</b><span v-if="draft.goal === k" class="chip accent">Elegido</span></div>
         <p class="small muted">{{ g.description }}</p>
       </button>
@@ -175,11 +176,14 @@ const goals = Object.entries(GOALS) as [Goal, (typeof GOALS)[Goal]][]
 
 <style scoped>
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.goal { display: flex; flex-direction: column; gap: 4px; }
-.goal.on { border-color: var(--accent); }
+.goal {
+  display: flex; flex-direction: column; gap: 4px; width: 100%;
+  border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.goal.on { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .daychip {
-  height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2);
+  height: 40px; border-radius: 50%; border: 0; background: var(--surface-2); aspect-ratio: 1; justify-self: center;
   color: var(--muted); font: inherit; font-weight: 700; cursor: pointer;
 }
 .daychip.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
