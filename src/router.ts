@@ -12,6 +12,7 @@ export const router = createRouter({
     { path: '/ejercicio/:id', name: 'exercise', component: () => import('./views/ExerciseDetail.vue'), props: true },
     { path: '/entreno', name: 'workout', component: () => import('./views/WorkoutSession.vue') },
     { path: '/progreso', name: 'progress', component: () => import('./views/ProgressView.vue') },
+    { path: '/objetivo', name: 'goal', component: () => import('./views/GoalView.vue') },
     { path: '/ajustes', name: 'settings', component: () => import('./views/SettingsView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

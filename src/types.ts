@@ -23,18 +23,25 @@ export interface Exercise {
   l: 'es' | 'en'
 }
 
+/** reps = repeticiones; s = segundos (planchas); min = minutos (cardio) */
+export type Unit = 'reps' | 's' | 'min'
+
 export interface Target {
   sets: number
   repMin: number
   repMax: number
   /** descanso en segundos */
   rest: number
+  /** unidad del rango repMin–repMax (por defecto reps) */
+  unit?: Unit
 }
 
 export interface PlanExercise extends Target {
   uid: string
   exerciseId: string
   notes?: string
+  /** ejercicio principal (multiarticular): recibe la serie extra de la semana 3 */
+  main?: boolean
 }
 
 export interface Routine {
@@ -47,6 +54,12 @@ export interface Plan {
   routines: Routine[]
   /** índice 0 = lunes … 6 = domingo; null = descanso */
   schedule: (string | null)[]
+  /** si faltas a una sesión, se mueve al siguiente día disponible (por defecto true) */
+  rollover?: boolean
+  /** días en los que puedes entrenar (lunes … domingo); por defecto lunes a viernes */
+  available?: boolean[]
+  /** fecha (YYYY-MM-DD) en que se creó el plan: los días anteriores de esa semana no cuentan */
+  since?: string
 }
 
 export interface SetLog {
@@ -72,6 +85,41 @@ export interface Workout {
   routineName: string
   exercises: ExerciseLog[]
   notes?: string
+  /** sesión hecha en semana de descarga (no cuenta para la progresión) */
+  deload?: boolean
+}
+
+export type Goal = 'fatloss' | 'muscle' | 'strength' | 'health'
+export type Sex = 'male' | 'female' | 'na'
+export type Activity = 'sedentary' | 'light' | 'moderate' | 'active'
+
+export interface Profile {
+  sex: Sex
+  age: number | null
+  /** cm */
+  height: number | null
+  activity: Activity
+}
+
+export interface WeighIn {
+  /** YYYY-MM-DD */
+  date: string
+  weight: number
+  /** perímetro de cintura en cm */
+  waist?: number | null
+}
+
+/** Programa por objetivo: fases de 4 semanas (3 de carga + 1 de descarga). */
+export interface Program {
+  goal: Goal
+  /** fase actual (1, 2, 3…) */
+  phase: number
+  /** lunes (YYYY-MM-DD) en que empezó la fase */
+  startDate: string
+  sessions: number
+  available: boolean[]
+  restDay: number | null
+  maxMinutes: number
 }
 
 export interface Settings {

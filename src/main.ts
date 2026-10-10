@@ -7,11 +7,12 @@ import { useCatalogue } from './stores/catalogue'
 import { useSettings } from './stores/settings'
 import { usePlan } from './stores/plan'
 import { useWorkouts } from './stores/workouts'
+import { useProgram } from './stores/program'
 
 const app = createApp(App).use(createPinia()).use(router)
 
 // Carga datos locales y catálogo antes de montar para evitar parpadeos.
-Promise.all([useCatalogue().load(), useSettings().ready, usePlan().ready, useWorkouts().ready])
+Promise.all([useCatalogue().load(), useSettings().ready, usePlan().ready, useWorkouts().ready, useProgram().ready])
   .then(() => app.mount('#app'))
   .catch((e: Error) => {
     document.getElementById('app')!.innerHTML =

@@ -1,4 +1,4 @@
-import type { Plan, Settings, Workout } from '../types'
+import type { Plan, Profile, Program, Settings, WeighIn, Workout } from '../types'
 
 export interface Backup {
   app: 'open-gym'
@@ -7,15 +7,24 @@ export interface Backup {
   plan: Plan
   workouts: Workout[]
   settings: Settings
+  profile?: Profile
+  program?: Program | null
+  weighIns?: WeighIn[]
 }
 
-export const createBackup = (plan: Plan, workouts: Workout[], settings: Settings): Backup => ({
+export const createBackup = (
+  plan: Plan,
+  workouts: Workout[],
+  settings: Settings,
+  extra: Pick<Backup, 'profile' | 'program' | 'weighIns'> = {},
+): Backup => ({
   app: 'open-gym',
   version: 1,
   exportedAt: new Date().toISOString(),
   plan,
   workouts,
   settings,
+  ...extra,
 })
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -36,5 +45,6 @@ export const parseBackup = (text: string): Backup => {
   if (!Array.isArray(workouts) || !workouts.every((w) => isObj(w) && typeof w.date === 'string' && Array.isArray(w.exercises)))
     throw new Error('El historial del respaldo está dañado.')
   if (!isObj(settings)) throw new Error('Los ajustes del respaldo están dañados.')
+  if (data.weighIns !== undefined && !Array.isArray(data.weighIns)) throw new Error('Los pesajes del respaldo están dañados.')
   return data as unknown as Backup
 }

@@ -54,3 +54,25 @@ describe('métricas', () => {
     expect(lastLogFor([], '0025')).toBeNull()
   })
 })
+
+describe('unidades y descarga', () => {
+  it('cardio sube de nivel al completar los minutos', () => {
+    const t: Target = { sets: 1, repMin: 15, repMax: 20, rest: 0, unit: 'min' }
+    const l: ExerciseLog = { ...log([[6, 20]]), target: t }
+    expect(suggest(t, l, 2.5)).toMatchObject({ kind: 'up', weight: 7, reps: 15 })
+    expect(volume(l)).toBe(0)
+    expect(bestSet(l)).toBeNull()
+  })
+
+  it('plancha progresa de 5 en 5 segundos', () => {
+    const t: Target = { sets: 3, repMin: 30, repMax: 45, rest: 45, unit: 's' }
+    expect(suggest(t, log([[0, 30], [0, 30], [0, 35]]), 2.5)).toMatchObject({ kind: 'reps', reps: 35 })
+  })
+
+  it('lastLogFor ignora las sesiones de descarga', () => {
+    const w = (date: string, weight: number, deload = false): Workout => ({
+      id: date, date, routineId: null, routineName: '', exercises: [log([[weight, 8]])], deload,
+    })
+    expect(lastLogFor([w('2026-01-01', 60), w('2026-01-08', 54, true)], '0025')?.sets[0].weight).toBe(60)
+  })
+})

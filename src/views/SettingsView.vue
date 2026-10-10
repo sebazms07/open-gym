@@ -4,16 +4,18 @@ import { useSettings } from '../stores/settings'
 import { usePlan } from '../stores/plan'
 import { useWorkouts } from '../stores/workouts'
 import { useCatalogue } from '../stores/catalogue'
+import { useProgram } from '../stores/program'
 import { createBackup, parseBackup } from '../lib/exportImport'
 
 const prefs = useSettings()
 const planStore = usePlan()
 const workouts = useWorkouts()
 const catalogue = useCatalogue()
+const prog = useProgram()
 const message = ref('')
 
 function exportData() {
-  const backup = createBackup(planStore.plan, workouts.workouts, prefs.settings)
+  const backup = createBackup(planStore.plan, workouts.workouts, prefs.settings, { profile: prog.profile, program: prog.program, weighIns: prog.weighIns })
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
@@ -34,6 +36,9 @@ async function importData(ev: Event) {
     planStore.plan = b.plan
     workouts.workouts = b.workouts
     prefs.settings = { ...prefs.settings, ...b.settings }
+    if (b.profile) prog.profile = b.profile
+    if (b.program !== undefined) prog.program = b.program
+    if (b.weighIns) prog.weighIns = b.weighIns
     message.value = 'Datos importados correctamente.'
   } catch (e) {
     message.value = (e as Error).message

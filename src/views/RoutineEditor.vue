@@ -45,9 +45,17 @@ function clampInt(v: number, min: number, max: number) {
       </div>
       <div class="grid">
         <label class="field">Series<input type="number" inputmode="numeric" min="1" max="10" :value="e.sets" @change="e.sets = clampInt(($event.target as HTMLInputElement).valueAsNumber, 1, 10)" /></label>
-        <label class="field">Reps mín<input type="number" inputmode="numeric" min="1" max="100" :value="e.repMin" @change="e.repMin = clampInt(($event.target as HTMLInputElement).valueAsNumber, 1, 100); e.repMax = Math.max(e.repMax, e.repMin)" /></label>
-        <label class="field">Reps máx<input type="number" inputmode="numeric" min="1" max="100" :value="e.repMax" @change="e.repMax = clampInt(($event.target as HTMLInputElement).valueAsNumber, e.repMin, 100)" /></label>
+        <label class="field">Mín<input type="number" inputmode="numeric" min="1" max="100" :value="e.repMin" @change="e.repMin = clampInt(($event.target as HTMLInputElement).valueAsNumber, 1, 100); e.repMax = Math.max(e.repMax, e.repMin)" /></label>
+        <label class="field">Máx<input type="number" inputmode="numeric" min="1" max="100" :value="e.repMax" @change="e.repMax = clampInt(($event.target as HTMLInputElement).valueAsNumber, e.repMin, 100)" /></label>
         <label class="field">Descanso (s)<input type="number" inputmode="numeric" min="0" max="600" step="15" :value="e.rest" @change="e.rest = clampInt(($event.target as HTMLInputElement).valueAsNumber, 0, 600)" /></label>
+      </div>
+      <div class="row small">
+        <select v-model="e.unit" style="width: auto; min-height: 36px; padding: 4px 8px">
+          <option :value="undefined">Repeticiones</option>
+          <option value="s">Segundos</option>
+          <option value="min">Minutos (cardio)</option>
+        </select>
+        <label class="row muted"><input type="checkbox" v-model="e.main" style="width: auto; min-height: 0" /> Principal</label>
       </div>
       <input v-model="e.notes" placeholder="Nota (opcional): agarre, tempo, máquina…" class="small" />
     </div>

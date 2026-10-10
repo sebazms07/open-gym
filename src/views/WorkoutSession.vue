@@ -5,7 +5,8 @@ import { useWorkouts } from '../stores/workouts'
 import { useCatalogue } from '../stores/catalogue'
 import { useSettings } from '../stores/settings'
 import { useTimer } from '../stores/timer'
-import { lastLogFor } from '../lib/progression'
+import { lastLogFor, UNIT_LABEL } from '../lib/progression'
+import { usePlan } from '../stores/plan'
 import { formatDuration } from '../lib/util'
 import type { ExerciseLog, SetLog } from '../types'
 import Icon from '../components/Icon.vue'
@@ -15,6 +16,7 @@ const workouts = useWorkouts()
 const catalogue = useCatalogue()
 const prefs = useSettings()
 const timer = useTimer()
+const planStore = usePlan()
 
 const w = computed(() => workouts.active)
 const now = ref(Date.now())
@@ -25,6 +27,11 @@ const elapsed = computed(() => (w.value ? now.value - new Date(w.value.date).get
 
 const target = (log: ExerciseLog) => log.target ?? { sets: log.sets.length, repMin: 8, repMax: 12, rest: prefs.settings.defaultRest }
 const suggestion = (log: ExerciseLog) => workouts.suggestionFor(log.exerciseId, target(log))
+const unit = (log: ExerciseLog) => log.target?.unit ?? 'reps'
+const weightLabel = (log: ExerciseLog) => (unit(log) === 'min' ? 'nivel' : prefs.settings.unit)
+/** Nota del ejercicio en la rutina (p. ej. indicaciones de cardio). */
+const noteFor = (log: ExerciseLog) =>
+  planStore.routine(w.value?.routineId)?.exercises.find((e) => e.exerciseId === log.exerciseId)?.notes
 const lastTime = (log: ExerciseLog) => {
   const last = lastLogFor(workouts.workouts, log.exerciseId)
   return last ? last.sets.map((s) => `${s.weight ?? 0}×${s.reps}`).join(' · ') : null
@@ -84,6 +91,7 @@ function discard() {
     <header class="page-header">
       <div class="grow">
         <h1 class="ellipsis">{{ w.routineName }}</h1>
+        <span v-if="w.deload" class="chip" style="color: var(--warn)">Descarga</span>
         <p class="small muted num">{{ formatDuration(elapsed) }} · {{ doneSets }}/{{ totalSets }} series</p>
       </div>
       <button class="btn primary" @click="finish"><Icon name="check" :size="18" />Terminar</button>
@@ -93,15 +101,16 @@ function discard() {
       <div class="row">
         <RouterLink :to="`/ejercicio/${log.exerciseId}`" class="grow">
           <h3 class="cap">{{ catalogue.name(log.exerciseId) }}</h3>
-          <p class="small muted">{{ target(log).sets }} × {{ target(log).repMin }}–{{ target(log).repMax }} · descanso {{ target(log).rest }}s</p>
+          <p class="small muted">{{ log.sets.length }} × {{ target(log).repMin }}–{{ target(log).repMax }} {{ UNIT_LABEL[unit(log)] }}<template v-if="target(log).rest"> · descanso {{ target(log).rest }}s</template></p>
         </RouterLink>
         <button class="btn icon ghost" aria-label="Quitar ejercicio" @click="removeExercise(ei)"><Icon name="x" :size="18" /></button>
       </div>
       <p class="hint small" :class="suggestion(log).kind">{{ suggestion(log).message }}</p>
+      <p v-if="noteFor(log)" class="small muted">ℹ️ {{ noteFor(log) }}</p>
       <p v-if="lastTime(log)" class="small muted">Última vez: <span class="num">{{ lastTime(log) }}</span></p>
 
       <div class="sets">
-        <div class="head small muted"><span>#</span><span>{{ prefs.settings.unit }}</span><span>reps</span><span /></div>
+        <div class="head small muted"><span>#</span><span>{{ weightLabel(log) }}</span><span>{{ UNIT_LABEL[unit(log)] }}</span><span /></div>
         <div v-for="(s, si) in log.sets" :key="si" class="set" :class="{ done: s.done }">
           <span class="muted num">{{ si + 1 }}</span>
           <input type="text" inputmode="decimal" :value="s.weight ?? ''" :placeholder="String(suggestion(log).weight ?? '—')" @change="setWeight(log, si, ($event.target as HTMLInputElement).value)" />

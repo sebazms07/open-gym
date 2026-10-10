@@ -5,8 +5,10 @@ import { persist } from '../lib/db'
 import { uid } from '../lib/util'
 import { LOWER_BODY } from '../lib/labels'
 import { lastLogFor, suggest } from '../lib/progression'
+import { applyWeek, deloadWeight } from '../lib/program'
 import { useCatalogue } from './catalogue'
 import { useSettings } from './settings'
+import { useProgram } from './program'
 
 export const useWorkouts = defineStore('workouts', () => {
   const workouts = ref<Workout[]>([])
@@ -25,10 +27,18 @@ export const useWorkouts = defineStore('workouts', () => {
   const suggestionFor = (exerciseId: string, target: Target) =>
     suggest(target, lastLogFor(workouts.value, exerciseId), incrementFor(exerciseId))
 
-  function buildLog(exerciseId: string, target: Target): ExerciseLog {
-    const s = suggestionFor(exerciseId, target)
-    const sets: SetLog[] = Array.from({ length: target.sets }, () => ({ weight: s.weight, reps: null, done: false }))
-    return { uid: uid(), exerciseId, target: { ...target }, sets }
+  /**
+   * Crea el registro de un ejercicio. `target` es el objetivo base del plan (lo usa la
+   * progresión); el número de series y el peso inicial se ajustan a la semana del bloque.
+   */
+  function buildLog(exerciseId: string, target: Target, main = false): ExerciseLog {
+    const base: Target = { sets: target.sets, repMin: target.repMin, repMax: target.repMax, rest: target.rest, ...(target.unit ? { unit: target.unit } : {}) }
+    const week = useProgram().week
+    const adjusted = week ? applyWeek(base, main, week) : base
+    const s = suggestionFor(exerciseId, base)
+    const weight = week?.deload && s.weight && base.unit !== 'min' ? deloadWeight(s.weight) : s.weight
+    const sets: SetLog[] = Array.from({ length: adjusted.sets }, () => ({ weight, reps: null, done: false }))
+    return { uid: uid(), exerciseId, target: base, sets }
   }
 
   function start(routine?: Routine) {
@@ -37,7 +47,8 @@ export const useWorkouts = defineStore('workouts', () => {
       date: new Date().toISOString(),
       routineId: routine?.id ?? null,
       routineName: routine?.name ?? 'Entreno libre',
-      exercises: (routine?.exercises ?? []).map((e) => buildLog(e.exerciseId, e)),
+      exercises: (routine?.exercises ?? []).map((e) => buildLog(e.exerciseId, e, e.main)),
+      ...(useProgram().week?.deload ? { deload: true } : {}),
     }
   }
 

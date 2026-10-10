@@ -5,13 +5,48 @@ import { persist } from '../lib/db'
 import { uid } from '../lib/util'
 import { todayIndex } from '../lib/labels'
 import { TEMPLATES, planFromTemplate } from '../data/templates'
+import { generatePlan } from '../lib/program'
+import { DEFAULT_AVAILABLE, projectWeek, unplacedCount } from '../lib/schedule'
+import { startOfWeek } from '../lib/util'
+import { defaultProgram } from './program'
+import { useWorkouts } from './workouts'
 
 export const usePlan = defineStore('plan', () => {
-  const plan = ref<Plan>(planFromTemplate(TEMPLATES[1]))
+  const plan = ref<Plan>(generatePlan(defaultProgram()))
   const ready = persist('plan', plan)
+  const workouts = useWorkouts()
 
   const routine = (id: string | null | undefined) => plan.value.routines.find((r) => r.id === id)
-  const todayRoutine = computed(() => routine(plan.value.schedule[todayIndex()]))
+
+  const available = computed(() => plan.value.available ?? DEFAULT_AVAILABLE)
+  const rollover = computed(() => plan.value.rollover ?? true)
+
+  /** Sesiones registradas esta semana (día 0 = lunes). */
+  const doneThisWeek = computed(() => {
+    const monday = startOfWeek().getTime()
+    return workouts.workouts
+      .filter((w) => new Date(w.date).getTime() >= monday)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((w) => ({ day: todayIndex(new Date(w.date)), routineId: w.routineId }))
+  })
+
+  /** La semana con las sesiones perdidas movidas al siguiente día disponible. */
+  /** Día desde el que cuenta esta semana (si el plan se creó a mitad de semana). */
+  const startDay = computed(() => {
+    const since = plan.value.since ? new Date(`${plan.value.since}T00:00:00`) : null
+    return since && since >= startOfWeek() ? todayIndex(since) : 0
+  })
+  const week = computed(() =>
+    projectWeek(plan.value.schedule, available.value, rollover.value, doneThisWeek.value, todayIndex(), startDay.value),
+  )
+  const today = computed(() => week.value[todayIndex()])
+  const todayRoutine = computed(() => (today.value.status === 'planned' ? routine(today.value.routineId) : undefined))
+  /** Próxima sesión pendiente después de hoy. */
+  const nextSlot = computed(() => {
+    const i = week.value.findIndex((s, d) => d > todayIndex() && s.status === 'planned')
+    return i >= 0 ? { day: i, routine: routine(week.value[i].routineId) } : null
+  })
+  const unplaced = computed(() => unplacedCount(plan.value.schedule, week.value, doneThisWeek.value, startDay.value))
 
   function addRoutine(name = 'Nueva rutina'): Routine {
     const r: Routine = { id: uid(), name, exercises: [] }
@@ -38,8 +73,8 @@ export const usePlan = defineStore('plan', () => {
 
   function loadTemplate(templateId: string) {
     const t = TEMPLATES.find((x) => x.id === templateId)
-    if (t) plan.value = planFromTemplate(t)
+    if (t) plan.value = { ...planFromTemplate(t), rollover: rollover.value, available: [...available.value] }
   }
 
-  return { plan, ready, routine, todayRoutine, addRoutine, removeRoutine, duplicateRoutine, addExercise, loadTemplate }
+  return { plan, ready, routine, available, rollover, doneThisWeek, week, today, todayRoutine, nextSlot, unplaced, addRoutine, removeRoutine, duplicateRoutine, addExercise, loadTemplate }
 })

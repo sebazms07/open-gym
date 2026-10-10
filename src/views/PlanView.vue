@@ -46,8 +46,15 @@ function remove(id: string, name: string) {
       </div>
     </section>
 
+    <RouterLink to="/objetivo" class="card accent row">
+      <Icon name="trophy" />
+      <div class="grow"><b>Mi objetivo</b><div class="small muted">Genera un plan según tu meta, días y tiempo disponibles.</div></div>
+      <Icon name="next" />
+    </RouterLink>
+
     <section class="card stack">
       <h2>Semana</h2>
+      <label class="row small"><input type="checkbox" :checked="planStore.rollover" style="width: auto; min-height: 0" @change="planStore.plan.rollover = ($event.target as HTMLInputElement).checked" /> Si falto a una sesión, moverla al siguiente día disponible</label>
       <div class="list">
         <label v-for="(d, i) in DAYS" :key="d" class="list-item day">
           <span class="dayname" :class="{ today: i === today }">{{ d }}</span>
