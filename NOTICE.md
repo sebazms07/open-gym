@@ -44,3 +44,14 @@ SOFTWARE.
 ```
 
 El diseño visual (tema oscuro, acento verde, navegación con botón central) está inspirado en openGym.
+
+## Imágenes de ejercicios (inicio y fin)
+
+`public/media/<id>/0.jpg` y `1.jpg` (reducidas a 480 px), con el origen de cada una en `src/data/media.json`:
+
+- `"src": "ek"` — ilustraciones de [everkinetic/data](https://github.com/everkinetic/data) (everkinetic.com),
+  bajo **CC BY-SA 4.0**. Se muestran invertidas en modo oscuro.
+- `"src": "fedb"` — fotos de [free-exercise-db](https://github.com/yuhonas/free-exercise-db), bajo **Unlicense**
+  (dominio público).
+
+Cada ejercicio con imágenes muestra su crédito en la pantalla de detalle.

@@ -10,6 +10,8 @@ import { formatDate, formatNumber } from '../lib/util'
 import Icon from '../components/Icon.vue'
 import ProgressChart from '../components/ProgressChart.vue'
 import MuscleFigure from '../components/MuscleFigure.vue'
+import ExerciseAnimation from '../components/ExerciseAnimation.vue'
+import { mediaFor, mediaCredit } from '../lib/media'
 import { muscleWeights, MUSCLE_NAME_ES, type Muscle } from '../lib/muscles'
 import { useProgram } from '../stores/program'
 
@@ -19,6 +21,7 @@ const catalogue = useCatalogue()
 const workouts = useWorkouts()
 const prefs = useSettings()
 const prog = useProgram()
+const media = computed(() => mediaFor(props.id))
 const weights = computed(() => (ex.value ? (muscleWeights(ex.value) as Record<string, number>) : {}))
 const worked = computed(() =>
   (Object.entries(weights.value) as [Muscle, number][]).sort((a, b) => b[1] - a[1]).map(([m, w]) => ({ name: MUSCLE_NAME_ES[m], main: w >= 0.75 })),
@@ -39,8 +42,12 @@ const videos = computed(() => `https://www.youtube.com/results?search_query=${en
     <header class="page-header">
       <button class="btn icon" aria-label="Volver" @click="router.back()"><Icon name="back" /></button>
     </header>
-    <div class="card" style="padding: 18px 0">
-      <MuscleFigure :weights="weights" :sex="prog.figureSex" :height="280" />
+    <template v-if="media">
+      <ExerciseAnimation :exercise-id="id" :height="280" />
+      <a :href="mediaCredit(media).url" target="_blank" rel="noopener" class="xs faint" style="margin-top: -8px; text-align: right">{{ mediaCredit(media).text }}</a>
+    </template>
+    <div class="card" :style="{ padding: media ? '12px 0' : '18px 0' }">
+      <MuscleFigure :weights="weights" :sex="prog.figureSex" :height="media ? 180 : 280" />
     </div>
     <h1 class="cap" style="font-size: 1.6rem">{{ ex.n }}</h1>
     <div class="chips">
