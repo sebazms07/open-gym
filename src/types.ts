@@ -23,6 +23,8 @@ export interface Exercise {
   l: 'es' | 'en'
   /** mapa muscular corregido por openGym: { músculo: peso 0–1 } */
   m?: Record<string, number>
+  /** 1 = fuera del catálogo curado: no sale en la guía, solo sirve para el historial */
+  x?: 1
 }
 
 /** reps = repeticiones; s = segundos (planchas); min = minutos (cardio) */

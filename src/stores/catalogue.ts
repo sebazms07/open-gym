@@ -14,11 +14,13 @@ export const useCatalogue = defineStore('catalogue', () => {
     const res = await fetch(`${import.meta.env.BASE_URL}data/exercises.json`)
     if (!res.ok) throw new Error(`No se pudo cargar el catálogo (${res.status})`)
     const data: { source: string; exercises: Exercise[] } = await res.json()
-    // orden alfabético por nombre en español
-    const sorted = data.exercises.sort((a, b) => a.n.localeCompare(b.n, 'es'))
+    // los ocultos vienen en versión mínima: se completan para que el resto de la app no falle
+    const all = data.exercises.map((e) => (e.x ? Object.assign({ s: [], c: '', d: '', i: [], l: 'en' as const }, e) : e))
+    // la guía solo muestra el catálogo curado, en orden alfabético
+    const sorted = all.filter((e) => !e.x).sort((a, b) => a.n.localeCompare(b.n, 'es'))
     haystack = sorted.map((e) => normalize(`${e.n} ${e.en}`))
     list.value = sorted
-    byId.value = new Map(sorted.map((e) => [e.id, e]))
+    byId.value = new Map(all.map((e) => [e.id, e]))
     source.value = data.source
   }
 

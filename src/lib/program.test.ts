@@ -5,7 +5,7 @@ import type { Goal, Program, Workout } from '../types'
 
 const LV = [true, true, true, true, true, false, false]
 const catalogue = JSON.parse(readFileSync(new URL('../../public/data/exercises.json', import.meta.url), 'utf8'))
-const ids = new Set<string>(catalogue.exercises.map((e: { id: string }) => e.id))
+const ids = new Set<string>(catalogue.exercises.filter((e: { x?: 1 }) => !e.x).map((e: { id: string }) => e.id))
 
 describe('pickTrainingDays', () => {
   it('4 sesiones de L a V con descanso el miércoles', () => {

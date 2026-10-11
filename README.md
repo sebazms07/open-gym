@@ -1,7 +1,7 @@
 # Open Gym — registro, guía y plan semanal
 
 Web app móvil (PWA) para llevar el registro de tus entrenamientos en el gimnasio, consultar una guía
-de más de 5.600 ejercicios en español y seguir un plan semanal personalizable con progresión automática.
+de ~440 ejercicios de gimnasio y calistenia en español y seguir un plan semanal personalizable con progresión automática.
 
 - **Inicio**: calendario de la semana, la sesión de hoy (o la que se movió), fase del programa, peso corporal con meta y racha semanal.
 - **Mi objetivo**: perfil, meta (bajar grasa, músculo, fuerza o salud), días disponibles y duración → genera el plan, con fases de 4 semanas (carga, sobrecarga y descarga), calorías y proteína orientativas.
@@ -22,7 +22,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # pruebas unitarias (Vitest)
 npm run build      # build de producción en dist/
-npm run catalogue  # vuelve a descargar el catálogo de openGym
+npm run catalogue  # vuelve a descargar y curar el catálogo de openGym
 ```
 
 Stack: Vue 3 + Vite + TypeScript, Pinia, Vue Router (hash), idb-keyval, Chart.js y vite-plugin-pwa.
@@ -43,3 +43,12 @@ Stack: Vue 3 + Vite + TypeScript, Pinia, Vue Router (hash), idb-keyval, Chart.js
 ## Licencia
 
 AGPL-3.0. El catálogo de ejercicios proviene de [openGym](https://github.com/DuarteSantos8/openGym); ver [NOTICE.md](NOTICE.md).
+
+## Catálogo curado
+
+De los ~5.600 ejercicios de openGym, `scripts/curate.mjs` deja ~440: equipo de gimnasio (barra, mancuernas,
+poleas, máquinas, kettlebell, peso corporal…) y calistenia, sin variantes numeradas ni accesorios raros
+(bandas, fitball, bosu…). Se priorizan los ejercicios comunes (los que aparecen en free-exercise-db y
+everkinetic), los clásicos de ExerciseDB y los nombres cortos, con cupos por músculo. Siempre se incluyen
+los imprescindibles (`ESSENTIALS`) y los ejercicios del generador de planes y las plantillas.
+Los demás quedan ocultos en versión mínima para que el historial antiguo siga mostrando sus nombres.
