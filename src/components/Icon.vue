@@ -26,6 +26,7 @@ const PATHS = {
   sparkle: 'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
   history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
   minus: 'M5 12h14',
+  pause: 'M8 5v14M16 5v14',
   trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6',
 } as const
 export type IconName = keyof typeof PATHS

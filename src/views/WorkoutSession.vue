@@ -14,6 +14,8 @@ import { formatDate, formatDuration } from '../lib/util'
 import type { ExerciseLog, Routine, SetLog } from '../types'
 import Icon from '../components/Icon.vue'
 import MuscleFigure from '../components/MuscleFigure.vue'
+import ExerciseAnimation from '../components/ExerciseAnimation.vue'
+import { mediaFor } from '../lib/media'
 
 const router = useRouter()
 const workouts = useWorkouts()
@@ -128,7 +130,12 @@ function startRoutine(r?: Routine) {
 
     <section v-for="(log, ei) in w.exercises" :key="log.uid" class="stack exercise">
       <p class="small muted">Ejercicio {{ ei + 1 }} / {{ w.exercises.length }}</p>
-      <RouterLink v-if="catalogue.get(log.exerciseId)" :to="`/ejercicio/${log.exerciseId}`" class="figure-panel">
+      <RouterLink v-if="catalogue.get(log.exerciseId) && mediaFor(log.exerciseId)" :to="`/ejercicio/${log.exerciseId}`" class="media-link">
+        <ExerciseAnimation :exercise-id="log.exerciseId" :height="230">
+          <span class="mini-map"><MuscleFigure :weights="muscleWeights(catalogue.get(log.exerciseId)!) as Record<string, number>" :sex="prog.figureSex" :height="64" /></span>
+        </ExerciseAnimation>
+      </RouterLink>
+      <RouterLink v-else-if="catalogue.get(log.exerciseId)" :to="`/ejercicio/${log.exerciseId}`" class="figure-panel">
         <MuscleFigure :weights="muscleWeights(catalogue.get(log.exerciseId)!) as Record<string, number>" :sex="prog.figureSex" :height="200" />
       </RouterLink>
       <div class="row">
@@ -197,6 +204,11 @@ function startRoutine(r?: Routine) {
 .wbar i { display: block; height: 100%; background: var(--accent); transition: width 0.3s var(--ease); }
 .exercise { padding-top: 8px; }
 .exercise + .exercise { border-top: 0.5px solid var(--border); padding-top: 18px; }
+.media-link { display: block; }
+.mini-map {
+  position: absolute; left: 10px; top: 10px; z-index: 2; padding: 6px 8px; border-radius: 12px;
+  background: color-mix(in srgb, #000 60%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
 .figure-panel { display: block; background: var(--surface); border-radius: var(--radius); padding: 14px 0; }
 .sets { display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; }
 .shead, .srow { display: grid; grid-template-columns: 24px 1fr 1fr 34px; gap: 8px; align-items: center; }
